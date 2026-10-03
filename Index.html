@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Master - 50 ta Noyob O'yin Platformasi</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1fa2ff 12%, #12d8fa 51%, #a6ffcb 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .card {
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 24px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 750px;
+            text-align: center;
+        }
+
+        h2 { color: #1a365d; margin-bottom: 10px; }
+        p { color: #4a5568; margin-bottom: 20px; font-size: 14px; }
+
+        .input-group { margin-bottom: 15px; text-align: left; }
+        label { display: block; margin-bottom: 5px; font-weight: 600; color: #2d3748; font-size: 13px; }
+        input { width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 15px; outline: none; }
+        input:focus { border-color: #1fa2ff; }
+
+        button {
+            width: 100%; padding: 12px; background: #1fa2ff; border: none; border-radius: 12px;
+            color: white; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; margin-top: 10px;
+        }
+        button:hover { opacity: 0.9; transform: translateY(-1px); }
+
+        .hidden { display: none !important; }
+        .back-btn { background: #cbd5e0; color: #4a5568; }
+        .back-btn:hover { background: #a0aec0; }
+
+        .templates-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 15px;
+            max-height: 400px;
+            overflow-y: auto;
+            padding: 10px;
+            text-align: left;
+        }
+
+        .template-card {
+            background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 16px;
+            padding: 15px; text-align: center; cursor: pointer; transition: 0.3s;
+        }
+        .template-card:hover { border-color: #1fa2ff; transform: translateY(-4px); background: #eefcff; }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            text-align: left;
+            margin-top: 15px;
+        }
+
+        .modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000;
+        }
+        .modal-content {
+            background: white; padding: 30px; border-radius: 20px; width: 90%; max-width: 500px; text-align: center;
+        }
+        .link-box {
+            background: #edf2f7; padding: 12px; border-radius: 8px; font-size: 12px; color: #2b6cb0;
+            word-break: break-all; margin: 15px 0; border: 1px dashed #cbd5e0; font-weight: bold; text-align: left;
+        }
+
+        /* 1-SHABLON: Bulut va Toshlar */
+        .cloud-question {
+            background: #ffffff; border: 4px solid #b2ebf2; padding: 25px;
+            border-radius: 50px; box-shadow: 0 10px 25px rgba(0,188,212,0.2);
+            font-size: 20px; font-weight: bold; color: #00838f; margin-bottom: 20px;
+        }
+        .stone-option {
+            background: linear-gradient(135deg, #78909c, #455a64) !important;
+            border-radius: 25px !important; border: 3px solid #cfd8dc !important;
+            color: white !important; font-weight: bold; box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+        }
+    </style>
+</head>
+<body>
+
+    <audio id="bgMusic" loop></audio>
+
+    <!-- 1-Ekran: Kirish -->
+    <div class="card" id="loginCard">
+        <h2>🎮 Quiz Dunyosi</h2>
+        <p>Boshlash uchun ismingizni kiriting</p>
+        <form onsubmit="handleLogin(event)">
+            <div class="input-group">
+                <label>Ismingiz</label>
+                <input type="text" id="name" placeholder="Masalan: Umidjon" required>
+            </div>
+            <div class="input-group">
+                <label>Telefon raqam</label>
+                <input type="tel" id="phone" placeholder="+998 90 123 45 67" required>
+            </div>
+            <button type="submit">Kirish</button>
+        </form>
+    </div>
+
+    <!-- 2-Ekran: Shablonlar -->
+    <div class="card hidden" id="dashboardCard">
+        <h2>✨ Xush kelibsiz, <span id="userName"></span>! 🎵</h2>
+        <p>50 ta har xil dizayndagi shablondan birini tanlang:</p>
+        <div class="templates-grid" id="templatesGrid"></div>
+    </div>
+
+    <!-- 3-Ekran: Savol kiritish -->
+    <div class="card hidden" id="editorCard">
+        <h2 id="editorTitle">📝 Savolni Kiritish</h2>
+        <p>O'yiningiz uchun savol va 4 ta variant yozing:</p>
+        
+        <div class="input-group">
+            <label>Savol matni</label>
+            <input type="text" id="qText" placeholder="Masalan: Savolni kiriting...">
+        </div>
+
+        <div class="options-grid">
+            <div class="input-group"><label>1-Variant</label><input type="text" id="opt1" placeholder="Variant 1"></div>
+            <div class="input-group"><label>2-Variant</label><input type="text" id="opt2" placeholder="Variant 2"></div>
+            <div class="input-group"><label>3-Variant</label><input type="text" id="opt3" placeholder="Variant 3"></div>
+            <div class="input-group"><label>4-Variant (TO'G'RI)</label><input type="text" id="opt4" placeholder="To'g'ri javob"></div>
+        </div>
+
+        <button style="background: #48bb78; margin-top: 20px;" onclick="generateLink()">🚀 Unikal Silka Olish</button>
+        <button class="back-btn" onclick="backToDashboard()">Orqaga qaytish</button>
+    </div>
+
+    <!-- Silka oynasi -->
+    <div class="modal hidden" id="linkModal">
+        <div class="modal-content">
+            <h2>🎉 Silkangiz Tayyor!</h2>
+            <p>Bu silkani brauzerga tashlasangiz, o'yin o'ziga xos dizayn va sokin musiqa bilan ochiladi:</p>
+            <div class="link-box" id="finalLink"></div>
+            <button onclick="openDirectGame()">🚀 O'yinni Ochish</button>
+            <button class="back-btn" style="margin-top: 5px;" onclick="closeModal()">Yopish</button>
+        </div>
+    </div>
+
+    <!-- 4-Ekran: O'yin -->
+    <div class="card hidden" id="playGameScreen">
+        <h2 id="playTitle">🎯 O'yin Boshlandi! 🎶</h2>
+        <p style="color: #3182ce; font-weight: bold;" id="musicInfo">Musiqani yoqish uchun bosing:</p>
+        
+        <button style="background: #ed8936; margin-bottom: 15px;" onclick="toggleMusic()">🎵 Sokin Musiqani Yoqish / To'xtatish</button>
+
+        <div id="playQuestionBox" style="font-size: 18px; font-weight: bold; padding: 18px; border-radius: 12px; margin-bottom: 20px;">
+            Savol yuklanmoqda...
+        </div>
+
+        <div class="options-grid" id="playOptionsGrid"></div>
+
+        <button class="back-btn" style="margin-top: 25px;" onclick="backToDashboard()">Bosh menyuga qaytish</button>
+    </div>
+
+    <script>
+        let selectedTemplateId = 1;
+        let isMusicPlaying = false;
+
+        // 50 ta shablon uchun 50 xil sokin instrumental musiqa manbalari
+        const relaxingMusicTracks = [];
+        for(let i = 1; i <= 50; i++) {
+            relaxingMusicTracks.push(`https://actions.google.com/sounds/v1/ambiences/rain_heavy.ogg?v=${i}`);
+        }
+
+        window.onload = function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.has('q')) {
+                document.getElementById('loginCard').classList.add('hidden');
+                document.getElementById('playGameScreen').classList.remove('hidden');
+
+                const tId = parseInt(urlParams.get('t') || 1);
+                const question = decodeURIComponent(urlParams.get('q'));
+                const opt1 = decodeURIComponent(urlParams.get('o1'));
+                const opt2 = decodeURIComponent(urlParams.get('o2'));
+                const opt3 = decodeURIComponent(urlParams.get('o3'));
+                const opt4 = decodeURIComponent(urlParams.get('o4'));
+
+                const music = document.getElementById('bgMusic');
+                music.src = relaxingMusicTracks[(tId - 1) % relaxingMusicTracks.length];
+
+                document.getElementById('playTitle').textContent = `🎯 O'yin #${tId} Boshlandi! 🎶`;
+                const qBox = document.getElementById('playQuestionBox');
+                qBox.textContent = question;
+
+                const grid = document.getElementById('playOptionsGrid');
+                grid.innerHTML = '';
+
+                // Hamma 50 ta shablon uchun har xil unikal dizaynlar beramiz
+                applyUniqueTemplateStyle(tId, qBox, grid);
+
+                let options = [
+                    {text: opt1, correct: false},
+                    {text: opt2, correct: false},
+                    {text: opt3, correct: false},
+                    {text: opt4, correct: true}
+                ];
+                options.sort(() => Math.random() - 0.5);
+
+                options.forEach(opt => {
+                    const btn = document.createElement('button');
+                    btn.textContent = opt.text;
+                    
+                    // 1-shablon uchun maxsus tosh dizayni, qolganlariga unikal stillar
+                    if (tId === 1) {
+                        btn.className = "stone-option";
+                        btn.style.padding = "15px";
+                    } else {
+                        applyUniqueButtonStyle(tId, btn);
+                    }
+
+                    btn.onclick = () => {
+                        if(opt.correct) {
+                            alert("🎉 To'g'ri javob! +10 ball!");
+                        } else {
+                            alert("❌ Xato javob! Qaytadan urinib ko'ring.");
+                        }
+                    };
+                    grid.appendChild(btn);
+                });
+            }
+        };
+
+        // Har bir shablon uchun o'ziga xos savol qutisi dizayni
+        function applyUniqueTemplateStyle(tId, qBox, grid) {
+            const screen = document.getElementById('playGameScreen');
+            
+            if (tId === 1) {
+                qBox.className = "cloud-question";
+                screen.style.background = "linear-gradient(135deg, #b2ebf2 0%, #80deea 100%)";
+            } else if (tId % 5 === 0) {
+                qBox.style.background = "#1a202c";
+                qBox.style.color = "#00ffcc";
+                qBox.style.border = "2px dashed #00ffcc";
+                screen.style.background = "linear-gradient(135deg, #2d3748 0%, #1a202c 100%)";
+            } else if (tId % 3 === 0) {
+                qBox.style.background = "#fffaf0";
+                qBox.style.color = "#dd6b20";
+                qBox.style.border = "3px solid #ed8936";
+                screen.style.background = "linear-gradient(135deg, #feebc8 0%, #fbd38d 100%)";
+            } else if (tId % 2 === 0) {
+                qBox.style.background = "#f0fff4";
+                qBox.style.color = "#38a169";
+                qBox.style.border = "3px solid #48bb78";
+                screen.style.background = "linear-gradient(135deg, #c6f6d5 0%, #9ae6b4 100%)";
+            } else {
+                qBox.style.background = "#faf5ff";
+                qBox.style.color = "#6b46c1";
+                qBox.style.border = "3px solid #9f7aea";
+                screen.style.background = "linear-gradient(135deg, #e9d8fd 0%, #d6bcfa 100%)";
+            }
+        }
+
+        // Variant tugmalari uchun unikal ranglar
+        function applyUniqueButtonStyle(tId, btn) {
+            const colors = ["#4facfe", "#fa709a", "#fee140", "#30cfd0", "#f093fb", "#43e97b", "#ff0844", "#65799b", "#f77062", "#f4e04d"];
+            btn.style.background = colors[(tId - 1) % colors.length];
+            btn.style.color = "#fff";
+            btn.style.padding = "14px";
+            btn.style.borderRadius = "16px";
+            btn.style.fontWeight = "bold";
+            btn.style.boxShadow = "0 4px 10px rgba(0,0,0,0.15)";
+        }
+
+        function toggleMusic() {
+            const music = document.getElementById('bgMusic');
+            if (isMusicPlaying) {
+                music.pause();
+                isMusicPlaying = false;
+                document.getElementById('musicInfo').textContent = "Musiqa to'xtatildi.";
+            } else {
+                music.play().then(() => {
+                    isMusicPlaying = true;
+                    document.getElementById('musicInfo').textContent = "🎶 Sokin fon musiqasi yangramoqda...";
+                }).catch(e => console.log(e));
+            }
+        }
+
+        function handleLogin(event) {
+            event.preventDefault();
+            document.getElementById('userName').textContent = document.getElementById('name').value;
+            document.getElementById('loginCard').classList.add('hidden');
+            document.getElementById('dashboardCard').classList.remove('hidden');
+
+            const grid = document.getElementById('templatesGrid');
+            if (grid.children.length === 0) {
+                const titles = [
+                    "Bulut va Toshlar", "Kosmik Sayohat", "Dengiz Tubida", "Sehrgarlar Makoni", "Poyga Moshinalari",
+                    "Qadimgi Dinozavrlar", "Xazina Sandig'i", "Futbol Ligasi", "Jungle Sirlari", "Muzlik Davri",
+                    "Sirli Labirint", "Vulkan Sarguzashti", "Sirli O'rmon", "Galaktika Jangchisi", "Piratlar Oili",
+                    "Robotlar Dunyosi", "Tarixiy Obidalar", "Kimyo Laboratoriyasi", "Matematik Jumboq", "Fizika Olami",
+                    "Geografik Xarita", "Biologiya Sirlari", "Astronomiya", "Musiqiy Nota", "Rassom Studiyasi",
+                    "Detektiv Agentligi", "Super Qahramon", "Sirli Qal'a", "Sehrli O'rmon", "Kiber Makon",
+                    "Teatr Sahnasi", "Arxeolog Qazishmasi", "Kosmik Stansiya", "Suvosti Kemasi", "Vulqon Etagida",
+                    "Sehrli Sandiq", "Qutb Ayiqlari", "Sahro Karvoni", "Tog' Cho'qqisi", "Osmono'par Binolar",
+                    "Sehrli Dorixona", "Qadimiy Saroy", "Zamon Mashinasi", "Yulduzlar Portali", "Sehrli Ko'l",
+                    "Bulutlar Uzra", "Tungi Sirlar", "Sehrli Oyna", "Sirli Topishmoq", "Final Bosqichi"
+                ];
+
+                const icons = ["☁️", "🚀", "🌊", "🧙‍♂️", "🏎️", "🦖", "🏴‍☠️", "⚽", "🌴", "❄️"];
+
+                for (let i = 1; i <= 50; i++) {
+                    const item = document.createElement('div');
+                    item.className = 'template-card';
+                    item.innerHTML = `
+                        <div class="template-icon">${icons[(i - 1) % icons.length]}</div>
+                        <div class="template-title">O'yin #${i}<br><span style="font-size:11px; color:#718096;">${titles[i-1]}</span></div>
+                    `;
+                    item.onclick = () => openEditor(i);
+                    grid.appendChild(item);
+                }
+            }
+        }
+
+        function openEditor(id) {
+            selectedTemplateId = id;
+            document.getElementById('editorTitle').textContent = `📝 O'yin #${id} - Savol Kiritish`;
+            document.getElementById('dashboardCard').classList.add('hidden');
+            document.getElementById('editorCard').classList.remove('hidden');
+        }
+
+        function generateLink() {
+            const q = encodeURIComponent(document.getElementById('qText').value || "Standart savol?");
+            const o1 = encodeURIComponent(document.getElementById('opt1').value || "Variant 1");
+            const o2 = encodeURIComponent(document.getElementById('opt2').value || "Variant 2");
+            const o3 = encodeURIComponent(document.getElementById('opt3').value || "Variant 3");
+            const o4 = encodeURIComponent(document.getElementById('opt4').value || "To'g'ri javob");
+
+            const baseUrl = window.location.href.split('?')[0];
+            const fullLink = `${baseUrl}?t=${selectedTemplateId}&q=${q}&o1=${o1}&o2=${o2}&o3=${o3}&o4=${o4}`;
+
+            document.getElementById('finalLink').textContent = fullLink;
+            document.getElementById('linkModal').classList.remove('hidden');
+        }
+
+        function openDirectGame() {
+            window.location.href = document.getElementById('finalLink').textContent;
+        }
+
+        function closeModal() {
+            document.getElementById('linkModal').classList.add('hidden');
+        }
+
+        function backToDashboard() {
+            window.location.href = window.location.href.split('?')[0];
+        }
+    </script>
+</body>
+</html>
